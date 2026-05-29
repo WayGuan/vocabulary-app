@@ -1,0 +1,246 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const allWords = await getCollection('words');
+const wordsData = allWords.map(entry => ({
+  slug: entry.slug,
+  word: entry.data.word,
+  type: entry.data.type || '',
+  phonetic: entry.data.phonetic || '',
+  definition: entry.data.definition,
+  example: entry.data.example || '',
+}));
+---
+
+<Layout title="Review">
+  <div id="loading" class="center-message">Loading your review queue…</div>
+
+  <div id="all-done" class="hidden center-message">
+    <div class="done-icon">✓</div>
+    <h2>All done for today!</h2>
+    <p>Come back tomorrow for your next review session.</p>
+    <a href={`${import.meta.env.BASE_URL}all`} class="btn btn-browse" style="margin-top:1.5rem">Browse all words</a>
+  </div>
+
+  <div id="review-session" class="hidden">
+    <div class="progress-row">
+      <span id="progress-text">Card 1 of 3</span>
+      <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+    </div>
+
+    <div id="flashcard" class="flashcard">
+      <div class="card-inner" id="card-inner">
+        <div class="card-front">
+          <div id="card-type" class="card-meta"></div>
+          <div id="card-word" class="card-word"></div>
+          <div id="card-phonetic" class="card-phonetic"></div>
+          <div class="tap-hint">tap to reveal</div>
+        </div>
+        <div class="card-back">
+          <div id="card-definition" class="card-definition"></div>
+          <div id="card-example" class="card-example"></div>
+          <a id="card-link" href="#" class="card-more-link">full entry →</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="flip-hint" class="flip-hint">Click the card to see the definition</div>
+
+    <div id="rating-buttons" class="rating-buttons hidden">
+      <button class="btn btn-again" id="btn-again">Again<span class="sub">tomorrow</span></button>
+      <button class="btn btn-hard" id="btn-hard">Hard<span class="sub">+days</span></button>
+      <button class="btn btn-easy" id="btn-easy">Easy<span class="sub">+more days</span></button>
+    </div>
+  </div>
+</Layout>
+
+<script type="application/json" id="words-data" set:html={JSON.stringify(wordsData)}></script>
+
+<style>
+  .center-message {
+    text-align: center;
+    padding: 4rem 1rem;
+  }
+  .done-icon {
+    font-size: 3rem;
+    color: #16a34a;
+    background: #dcfce7;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+  }
+  .center-message h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .center-message p  { color: #64748b; }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  #progress-text { font-size: 0.85rem; color: #64748b; white-space: nowrap; }
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #a78bfa;
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  .flashcard {
+    width: 100%;
+    height: 320px;
+    cursor: pointer;
+    perspective: 1200px;
+    margin-bottom: 1.5rem;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .card-inner.flipped { transform: rotateY(180deg); }
+
+  .card-front, .card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .card-front { background: white; }
+  .card-back  { background: #f0eeff; transform: rotateY(180deg); }
+
+  .card-meta     { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .card-word     { font-size: 2.5rem; font-weight: 700; color: #1a1a2e; }
+  .card-phonetic { font-size: 1rem; color: #64748b; margin-top: 0.4rem; font-style: italic; }
+  .tap-hint      { font-size: 0.8rem; color: #cbd5e1; margin-top: 2rem; }
+
+  .card-definition { font-size: 1.1rem; color: #1e293b; margin-bottom: 1rem; line-height: 1.5; }
+  .card-example    { font-size: 0.9rem; color: #475569; font-style: italic; line-height: 1.5; }
+  .card-more-link  { margin-top: 1.2rem; font-size: 0.85rem; color: #7c3aed; text-decoration: none; }
+  .card-more-link:hover { text-decoration: underline; }
+
+  .flip-hint { text-align: center; font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem; }
+
+  .rating-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+  .rating-buttons .btn {
+    flex: 1;
+    max-width: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    gap: 0.2rem;
+  }
+  .sub { font-size: 0.7rem; font-weight: 400; opacity: 0.7; }
+</style>
+
+<script>
+  import { getDueCards, updateCard, getCardData } from '../scripts/sm2.js';
+
+  const wordsData = JSON.parse(document.getElementById('words-data').textContent);
+  const allSlugs = wordsData.map(w => w.slug);
+
+  let dueQueue = [];
+  let currentIndex = 0;
+  let isFlipped = false;
+
+  const cardInner    = document.getElementById('card-inner');
+  const ratingBtns   = document.getElementById('rating-buttons');
+  const flipHint     = document.getElementById('flip-hint');
+  const progressText = document.getElementById('progress-text');
+  const progressFill = document.getElementById('progress-fill');
+
+  function getWord(slug) {
+    return wordsData.find(w => w.slug === slug);
+  }
+
+  function showCard(slug) {
+    const w = getWord(slug);
+    document.getElementById('card-word').textContent = w.word;
+    document.getElementById('card-phonetic').textContent = w.phonetic;
+    document.getElementById('card-type').textContent = w.type;
+    document.getElementById('card-definition').textContent = w.definition;
+    document.getElementById('card-example').textContent = w.example;
+    document.getElementById('card-link').href = `${import.meta.env.BASE_URL}words/${slug}`;
+
+    isFlipped = false;
+    cardInner.classList.remove('flipped');
+    ratingBtns.classList.add('hidden');
+    flipHint.classList.remove('hidden');
+
+    const total = dueQueue.length;
+    const done  = currentIndex;
+    progressText.textContent = `Card ${done + 1} of ${total}`;
+    progressFill.style.width = `${(done / total) * 100}%`;
+  }
+
+  function flipCard() {
+    if (isFlipped) return;
+    isFlipped = true;
+    cardInner.classList.add('flipped');
+    ratingBtns.classList.remove('hidden');
+    flipHint.classList.add('hidden');
+  }
+
+  function rate(quality) {
+    const slug = dueQueue[currentIndex];
+    const result = updateCard(slug, quality);
+
+    // Update sub-label hints with actual next interval
+    document.getElementById('btn-again').querySelector('.sub').textContent = 'tomorrow';
+    document.getElementById('btn-hard').querySelector('.sub').textContent  = `+${quality === 3 ? result.interval : '?'} days`;
+    document.getElementById('btn-easy').querySelector('.sub').textContent  = `+${quality === 5 ? result.interval : '?'} days`;
+
+    currentIndex++;
+    if (currentIndex >= dueQueue.length) {
+      document.getElementById('review-session').classList.add('hidden');
+      document.getElementById('all-done').classList.remove('hidden');
+    } else {
+      showCard(dueQueue[currentIndex]);
+    }
+  }
+
+  // Wire events
+  document.getElementById('flashcard').addEventListener('click', flipCard);
+  document.getElementById('btn-again').addEventListener('click', (e) => { e.stopPropagation(); rate(1); });
+  document.getElementById('btn-hard').addEventListener('click',  (e) => { e.stopPropagation(); rate(3); });
+  document.getElementById('btn-easy').addEventListener('click',  (e) => { e.stopPropagation(); rate(5); });
+
+  // Initialize
+  dueQueue = getDueCards(allSlugs);
+  document.getElementById('loading').classList.add('hidden');
+
+  if (dueQueue.length === 0) {
+    document.getElementById('all-done').classList.remove('hidden');
+  } else {
+    document.getElementById('review-session').classList.remove('hidden');
+    showCard(dueQueue[0]);
+  }
+</script>

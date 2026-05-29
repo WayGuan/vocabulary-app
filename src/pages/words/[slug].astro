@@ -1,0 +1,120 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const words = await getCollection('words');
+  return words.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { word, type, phonetic, definition, example, tags } = entry.data;
+---
+
+<Layout title={word}>
+  <article class="word-entry">
+    <a href={`${import.meta.env.BASE_URL}all`} class="back-link">← All words</a>
+
+    <header>
+      {type && <div class="word-type">{type}</div>}
+      <h1>{word}</h1>
+      {phonetic && <div class="phonetic">{phonetic}</div>}
+    </header>
+
+    <section class="definition-block">
+      <p class="definition">{definition}</p>
+      {example && <p class="example">"{example}"</p>}
+    </section>
+
+    {tags && tags.length > 0 && (
+      <div class="tags">
+        {tags.map(tag => <span class="tag">{tag}</span>)}
+      </div>
+    )}
+
+    <div class="body-content prose">
+      <Content />
+    </div>
+
+    <div class="review-status" id="review-status"></div>
+  </article>
+</Layout>
+
+<script type="application/json" id="slug-data" set:html={JSON.stringify(entry.slug)}></script>
+
+<style>
+  .back-link {
+    display: inline-block;
+    color: #7c3aed;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  header { margin-bottom: 1.5rem; }
+  .word-type {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 0.3rem;
+  }
+  h1 { font-size: 2.8rem; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
+  .phonetic { font-size: 1rem; color: #64748b; font-style: italic; margin-top: 0.3rem; }
+
+  .definition-block {
+    background: white;
+    border-left: 4px solid #a78bfa;
+    border-radius: 0 12px 12px 0;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .definition { font-size: 1.15rem; color: #1e293b; margin-bottom: 0.8rem; }
+  .example    { font-size: 0.95rem; color: #475569; font-style: italic; }
+
+  .tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .tag {
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.2rem 0.7rem;
+    border-radius: 99px;
+  }
+
+  .prose {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: #334155;
+    line-height: 1.7;
+  }
+  .prose :global(strong) { color: #1e293b; }
+  .prose :global(em)     { color: #475569; }
+  .prose :global(p)      { margin-bottom: 0.8rem; }
+  .prose :global(p:last-child) { margin-bottom: 0; }
+
+  .review-status {
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    text-align: center;
+  }
+</style>
+
+<script>
+  import { getCardData } from '../../scripts/sm2.js';
+  const slug   = JSON.parse(document.getElementById('slug-data').textContent);
+  const card   = getCardData(slug);
+  const el     = document.getElementById('review-status');
+  const today  = new Date().toISOString().split('T')[0];
+  const isDue  = card.nextReview <= today;
+  el.textContent = isDue
+    ? `Due for review today (${card.repetitions} reviews completed)`
+    : `Next review: ${card.nextReview} · streak: ${card.repetitions}`;
+</script>

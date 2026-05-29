@@ -1,0 +1,136 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const allWords = await getCollection('words');
+const wordsList = allWords
+  .sort((a, b) => a.data.word.localeCompare(b.data.word))
+  .map(entry => ({
+    slug: entry.slug,
+    word: entry.data.word,
+    type: entry.data.type || '',
+    definition: entry.data.definition,
+    tags: entry.data.tags || [],
+  }));
+---
+
+<Layout title="All Words">
+  <div class="page-header">
+    <h1>All Words <span id="total-count" class="count-badge"></span></h1>
+    <input id="search" type="search" placeholder="Filter words…" />
+  </div>
+
+  <table class="word-table" id="word-table">
+    <thead>
+      <tr>
+        <th>Word</th>
+        <th>Type</th>
+        <th>Definition</th>
+        <th>Next Review</th>
+        <th>Streak</th>
+      </tr>
+    </thead>
+    <tbody id="word-tbody">
+      {wordsList.map(w => (
+        <tr data-word={w.word.toLowerCase()} data-slug={w.slug}>
+          <td><a href={`${import.meta.env.BASE_URL}words/${w.slug}`} class="word-link">{w.word}</a></td>
+          <td class="type-cell">{w.type}</td>
+          <td class="def-cell">{w.definition}</td>
+          <td class="stat-cell" data-stat="next" data-slug={w.slug}>—</td>
+          <td class="stat-cell" data-stat="reps" data-slug={w.slug}>0</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Layout>
+
+<script type="application/json" id="words-list" set:html={JSON.stringify(wordsList)}></script>
+
+<style>
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  h1 { font-size: 1.4rem; }
+  .count-badge {
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    vertical-align: middle;
+  }
+
+  #search {
+    margin-left: auto;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    width: 220px;
+  }
+  #search:focus { border-color: #a78bfa; box-shadow: 0 0 0 3px #ede9fe; }
+
+  .word-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .word-table th {
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+  }
+  .word-table td {
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+  .word-table tr:hover td { background: #fafafa; }
+
+  .word-link { color: #6d28d9; font-weight: 600; text-decoration: none; }
+  .word-link:hover { text-decoration: underline; }
+  .type-cell { color: #94a3b8; white-space: nowrap; }
+  .def-cell  { color: #475569; max-width: 320px; }
+  .stat-cell { color: #64748b; white-space: nowrap; font-size: 0.85rem; }
+  .due-today { color: #b45309; font-weight: 600; }
+  .overdue   { color: #dc2626; font-weight: 600; }
+</style>
+
+<script>
+  import { getAllStats } from '../scripts/sm2.js';
+
+  const wordsList = JSON.parse(document.getElementById('words-list').textContent);
+  const allSlugs  = wordsList.map(w => w.slug);
+  const stats     = getAllStats(allSlugs);
+  const today     = new Date().toISOString().split('T')[0];
+
+  document.getElementById('total-count').textContent = wordsList.length;
+
+  stats.forEach(({ slug, nextReview, repetitions }) => {
+    const nextCell = document.querySelector(`[data-stat="next"][data-slug="${slug}"]`);
+    const repsCell = document.querySelector(`[data-stat="reps"][data-slug="${slug}"]`);
+    if (nextCell) {
+      nextCell.textContent = nextReview;
+      if (nextReview < today)  nextCell.classList.add('overdue');
+      if (nextReview === today) nextCell.classList.add('due-today');
+    }
+    if (repsCell) repsCell.textContent = repetitions;
+  });
+
+  // Search filter
+  document.getElementById('search').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('#word-tbody tr').forEach(row => {
+      row.style.display = row.dataset.word.includes(q) ? '' : 'none';
+    });
+  });
+</script>

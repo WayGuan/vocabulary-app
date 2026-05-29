@@ -1,0 +1,90 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — Vocabulary</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    nav {
+      background: #1a1a2e;
+      padding: 0.9rem 2rem;
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    nav .brand {
+      color: #a78bfa;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-decoration: none;
+      margin-right: auto;
+    }
+
+    nav a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    nav a:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    main {
+      max-width: 720px;
+      margin: 2.5rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .hidden { display: none !important; }
+
+    .btn {
+      display: inline-block;
+      padding: 0.55rem 1.4rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-again  { background: #fee2e2; color: #b91c1c; }
+    .btn-hard   { background: #fef3c7; color: #92400e; }
+    .btn-easy   { background: #dcfce7; color: #166534; }
+    .btn-browse { background: #a78bfa; color: white; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href={base} class="brand">Vocabulary</a>
+    <a href={base}>Review</a>
+    <a href={`${base}all`}>All Words</a>
+  </nav>
+  <main>
+    <slot />
+  </main>
+</body>
+</html>
