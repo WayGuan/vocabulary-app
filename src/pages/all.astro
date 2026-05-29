@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 const allWords = await getCollection('words');
 const wordsList = allWords
@@ -33,7 +34,7 @@ const wordsList = allWords
     <tbody id="word-tbody">
       {wordsList.map(w => (
         <tr data-word={w.word.toLowerCase()} data-slug={w.slug}>
-          <td><a href={`${import.meta.env.BASE_URL}words/${w.slug}`} class="word-link">{w.word}</a></td>
+          <td><a href={`${base}words/${w.slug}`} class="word-link">{w.word}</a></td>
           <td class="type-cell">{w.type}</td>
           <td class="def-cell">{w.definition}</td>
           <td class="stat-cell" data-stat="next" data-slug={w.slug}>—</td>

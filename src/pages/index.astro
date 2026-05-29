@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
 const allWords = await getCollection('words');
 const wordsData = allWords.map(entry => ({
@@ -20,7 +21,7 @@ const wordsData = allWords.map(entry => ({
     <div class="done-icon">✓</div>
     <h2>All done for today!</h2>
     <p>Come back tomorrow for your next review session.</p>
-    <a href={`${import.meta.env.BASE_URL}all`} class="btn btn-browse" style="margin-top:1.5rem">Browse all words</a>
+    <a href={`${base}all`} class="btn btn-browse" style="margin-top:1.5rem">Browse all words</a>
   </div>
 
   <div id="review-session" class="hidden">
@@ -188,7 +189,8 @@ const wordsData = allWords.map(entry => ({
     document.getElementById('card-type').textContent = w.type;
     document.getElementById('card-definition').textContent = w.definition;
     document.getElementById('card-example').textContent = w.example;
-    document.getElementById('card-link').href = `${import.meta.env.BASE_URL}words/${slug}`;
+    const base = (import.meta.env.BASE_URL + '/').replace(/\/\/$/, '/');
+    document.getElementById('card-link').href = `${base}words/${slug}`;
 
     isFlipped = false;
     cardInner.classList.remove('flipped');
