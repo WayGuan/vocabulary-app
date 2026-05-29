@@ -53,6 +53,13 @@ const wordsData = allWords.map(entry => ({
       <button class="btn btn-hard" id="btn-hard">Hard<span class="sub">+days</span></button>
       <button class="btn btn-easy" id="btn-easy">Easy<span class="sub">+more days</span></button>
     </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-nav" id="btn-first" title="First card">⏮ First</button>
+      <button class="btn btn-nav" id="btn-prev" title="Previous card">← Prev</button>
+      <button class="btn btn-nav" id="btn-next" title="Next card">Next →</button>
+      <button class="btn btn-nav" id="btn-last" title="Last card">Last ⏭</button>
+    </div>
   </div>
 </Layout>
 
@@ -160,6 +167,30 @@ const wordsData = allWords.map(entry => ({
     gap: 0.2rem;
   }
   .sub { font-size: 0.7rem; font-weight: 400; opacity: 0.7; }
+
+  .nav-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .btn-nav {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.9rem;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-nav:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+  .btn-nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
 </style>
 
 <script>
@@ -182,14 +213,33 @@ const wordsData = allWords.map(entry => ({
     return wordsData.find(w => w.slug === slug);
   }
 
+  const btnFirst = document.getElementById('btn-first');
+  const btnPrev  = document.getElementById('btn-prev');
+  const btnNext  = document.getElementById('btn-next');
+  const btnLast  = document.getElementById('btn-last');
+
+  function updateNavButtons() {
+    const atStart = currentIndex <= 0;
+    const atEnd   = currentIndex >= dueQueue.length - 1;
+    btnFirst.disabled = atStart;
+    btnPrev.disabled  = atStart;
+    btnNext.disabled  = atEnd;
+    btnLast.disabled  = atEnd;
+  }
+
+  const base = (import.meta.env.BASE_URL + '/').replace(/\/\/$/, '/');
+
   function showCard(slug) {
     const w = getWord(slug);
+    if (!w) {
+      console.error('[showCard] word not found — slug:', JSON.stringify(slug), '| available:', wordsData.map(d => d.slug));
+      return;
+    }
     document.getElementById('card-word').textContent = w.word;
     document.getElementById('card-phonetic').textContent = w.phonetic;
     document.getElementById('card-type').textContent = w.type;
     document.getElementById('card-definition').textContent = w.definition;
     document.getElementById('card-example').textContent = w.example;
-    const base = (import.meta.env.BASE_URL + '/').replace(/\/\/$/, '/');
     document.getElementById('card-link').href = `${base}words/${slug}`;
 
     isFlipped = false;
@@ -201,14 +251,15 @@ const wordsData = allWords.map(entry => ({
     const done  = currentIndex;
     progressText.textContent = `Card ${done + 1} of ${total}`;
     progressFill.style.width = `${(done / total) * 100}%`;
+
+    updateNavButtons();
   }
 
   function flipCard() {
-    if (isFlipped) return;
-    isFlipped = true;
-    cardInner.classList.add('flipped');
-    ratingBtns.classList.remove('hidden');
-    flipHint.classList.add('hidden');
+    isFlipped = !isFlipped;
+    cardInner.classList.toggle('flipped', isFlipped);
+    ratingBtns.classList.toggle('hidden', !isFlipped);
+    flipHint.classList.toggle('hidden', isFlipped);
   }
 
   function rate(quality) {
@@ -229,19 +280,33 @@ const wordsData = allWords.map(entry => ({
     }
   }
 
+  function navigate(index) {
+    currentIndex = index;
+    showCard(dueQueue[currentIndex]);
+  }
+
   // Wire events
   document.getElementById('flashcard').addEventListener('click', flipCard);
   document.getElementById('btn-again').addEventListener('click', (e) => { e.stopPropagation(); rate(1); });
   document.getElementById('btn-hard').addEventListener('click',  (e) => { e.stopPropagation(); rate(3); });
   document.getElementById('btn-easy').addEventListener('click',  (e) => { e.stopPropagation(); rate(5); });
+  btnFirst.addEventListener('click', () => navigate(0));
+  btnPrev.addEventListener('click',  () => navigate(Math.max(0, currentIndex - 1)));
+  btnNext.addEventListener('click',  () => navigate(Math.min(dueQueue.length - 1, currentIndex + 1)));
+  btnLast.addEventListener('click',  () => navigate(dueQueue.length - 1));
 
   // Initialize
   dueQueue = getDueCards(allSlugs);
+  const isFreeReview = dueQueue.length === 0;
+  if (isFreeReview) dueQueue = allSlugs;
   document.getElementById('loading').classList.add('hidden');
 
   if (dueQueue.length === 0) {
     document.getElementById('all-done').classList.remove('hidden');
   } else {
+    if (isFreeReview) {
+      progressText.textContent = 'Free review';
+    }
     document.getElementById('review-session').classList.remove('hidden');
     showCard(dueQueue[0]);
   }
